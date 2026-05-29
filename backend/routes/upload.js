@@ -1,15 +1,9 @@
 const router   = require('express').Router();
 const multer   = require('multer');
 const { auth } = require('../middleware/auth');
-const cloudinary = require('cloudinary').v2;
 const { Readable } = require('stream');
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key:    process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const https = require('https');
+const FormData = require('form-data');
 
 // Use memory storage — no local disk needed
 const upload = multer({
@@ -26,21 +20,46 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   try {
-    // Upload buffer to Cloudinary via stream
-    const result = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: 'inkwell', resource_type: 'image' },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
-      Readable.from(req.file.buffer).pipe(stream);
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const preset    = process.env.CLOUDINARY_UPLOAD_PRESET || 'inkwell-unsigned';
+
+    const form = new FormData();
+    form.append('file', req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
     });
+    form.append('upload_preset', preset);
+    form.append('folder', 'inkwell');
+
+    const result = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'api.cloudinary.com',
+        path: `/v1_1/${cloudName}/image/upload`,
+        method: 'POST',
+        headers: form.getHeaders(),
+      };
+
+      const request = https.request(options, (response) => {
+        let data = '';
+        response.on('data', chunk => data += chunk);
+        response.on('end', () => {
+          try { resolve(JSON.parse(data)); }
+          catch (e) { reject(e); }
+        });
+      });
+
+      request.on('error', reject);
+      form.pipe(request);
+    });
+
+    if (result.error) {
+      console.error('Cloudinary error:', result.error.message);
+      return res.status(500).json({ error: result.error.message });
+    }
 
     res.json({ url: result.secure_url });
   } catch (err) {
-    console.error('Cloudinary upload error:', err.message);
+    console.error('Upload error:', err.message);
     res.status(500).json({ error: 'Upload failed: ' + err.message });
   }
 });
