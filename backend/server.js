@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const autoSetup = require('./scripts/autoSetup');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,8 +38,9 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`\n🖊  Inkwell API  →  http://localhost:${PORT}`);
   console.log(`   Database     →  MySQL (${process.env.DB_NAME})`);
   console.log(`   Health check →  http://localhost:${PORT}/api/health\n`);
+  await autoSetup();
 });
