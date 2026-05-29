@@ -42,14 +42,15 @@ export default function Editor() {
       const fd = new FormData();
       fd.append('image', file);
       const token = localStorage.getItem('inkwell_token');
-      const res   = await fetch('http://localhost:5000/api/upload', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const res   = await fetch(`${apiUrl}/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
       const data = await res.json();
       if (data.url) {
-        setCoverImage('http://localhost:5000' + data.url);
+        setCoverImage(data.url);
         toast('Image uploaded!', 'success');
       } else {
         toast(data.error || 'Upload failed', 'error');

@@ -83,14 +83,15 @@ export default function Profile() {
       const fd = new FormData();
       fd.append('image', file);
       const token = localStorage.getItem('inkwell_token');
-      const res = await fetch('http://localhost:5000/api/upload', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${apiUrl}/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
       const data = await res.json();
       if (data.url) {
-        setForm(f => ({ ...f, avatar: 'http://localhost:5000' + data.url }));
+        setForm(f => ({ ...f, avatar: data.url }));
         toast('Avatar uploaded!', 'success');
       } else {
         toast(data.error || 'Upload failed', 'error');
