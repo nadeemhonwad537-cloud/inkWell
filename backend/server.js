@@ -46,6 +46,27 @@ app.use('/api/upload', require('./routes/upload'));
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', db: 'mysql', time: new Date().toISOString() }));
 
+// One-time admin setup — creates superadmin if not exists
+app.get('/api/setup-admin', async (_req, res) => {
+  try {
+    const pool = require('./db/database');
+    const bcrypt = require('bcryptjs');
+    const [rows] = await pool.query('SELECT id FROM users WHERE email = ?', ['nadeemhonwad537@gmail.com']);
+    if (rows.length) {
+      await pool.query("UPDATE users SET role = 'admin' WHERE email = ?", ['nadeemhonwad537@gmail.com']);
+      return res.json({ message: 'Admin role updated' });
+    }
+    const hashed = bcrypt.hashSync('Nadeem@123', 12);
+    await pool.query(
+      "INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, 'admin', NOW())",
+      ['Nadeem', 'nadeemhonwad537@gmail.com', hashed]
+    );
+    res.json({ message: 'Superadmin created! Email: nadeemhonwad537@gmail.com, Password: Nadeem@123' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((err, _req, res, _next) => {
   console.error(err.stack);
