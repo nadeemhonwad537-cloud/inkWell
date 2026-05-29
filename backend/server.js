@@ -13,7 +13,21 @@ const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
 // ── MIDDLEWARE ────────────────────────────────────────────────────────
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
+app.use(cors({
+  origin: function(origin, callback) {
+    const allowed = [
+      process.env.CLIENT_URL || 'http://localhost:3000',
+      'http://localhost:3000',
+      'https://ink-well-one.vercel.app',
+    ];
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // allow all origins in production for now
+    }
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(uploadDir));
