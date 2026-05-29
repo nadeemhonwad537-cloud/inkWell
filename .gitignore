@@ -1,0 +1,10 @@
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+backend/inkwell.db
+backend/.env
+frontend/.env
+*.log
+frontend/build/
+.DS_Store
+backend/uploads/
