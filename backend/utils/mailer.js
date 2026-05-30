@@ -1,5 +1,4 @@
 const nodemailer = require('nodemailer');
-const { Resend } = require('resend');
 
 async function sendOTP(to, code) {
   const html = `
@@ -13,32 +12,37 @@ async function sendOTP(to, code) {
     </div>
   `;
 
-  // Use Resend in production, Gmail SMTP on localhost
-  if (process.env.NODE_ENV === 'production' && process.env.RESEND_API_KEY) {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
-      from: 'Inkwell Journal <onboarding@resend.dev>',
-      to,
-      subject: 'Your Inkwell verification code',
-      html,
-    });
-  } else {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-    });
-    await transporter.sendMail({
-      from: `"Inkwell Journal" <${process.env.MAIL_USER}>`,
-      to,
-      subject: 'Your Inkwell verification code',
-      html,
-    });
-  }
+  // Use Brevo SMTP in production, Gmail SMTP on localhost
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  const transporter = nodemailer.createTransport(
+    isProduction
+      ? {
+          host: 'smtp-relay.brevo.com',
+          port: 587,
+          secure: false,
+          auth: {
+            user: process.env.BREVO_LOGIN,
+            pass: process.env.BREVO_PASSWORD,
+          },
+        }
+      : {
+          host: 'smtp.gmail.com',
+          port: 587,
+          secure: false,
+          auth: {
+            user: process.env.MAIL_USER,
+            pass: process.env.MAIL_PASS,
+          },
+        }
+  );
+
+  await transporter.sendMail({
+    from: '"Inkwell Journal" <nadeemhonwad537@gmail.com>',
+    to,
+    subject: 'Your Inkwell verification code',
+    html,
+  });
 }
 
 module.exports = { sendOTP };
