@@ -37,6 +37,14 @@ export default function Home({ searchQuery }) {
   useEffect(() => { setPage(1); }, [activeCategory, searchQuery]);
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
+  // Auto-refresh every 30 seconds to show new posts in real time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchPosts();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [fetchPosts]);
+
   const handleLikeChange = (postId, liked, likes) => {
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, liked, likes } : p));
   };
@@ -68,8 +76,15 @@ export default function Home({ searchQuery }) {
           ))}
         </div>
 
-        <div className="section-label">
-          {searchQuery ? `Search: "${searchQuery}"` : activeCategory === 'All' ? 'Latest Essays' : `${activeCategory} Essays`}
+        <div className="section-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>{searchQuery ? `Search: "${searchQuery}"` : activeCategory === 'All' ? 'Latest Essays' : `${activeCategory} Essays`}</span>
+          <button onClick={fetchPosts} style={{
+            background: 'none', border: '1px solid var(--border)', cursor: 'pointer',
+            fontSize: '.65rem', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase',
+            color: 'var(--muted)', padding: '.3rem .7rem', display: 'flex', alignItems: 'center', gap: '.3rem',
+          }}>
+            ↻ Refresh
+          </button>
         </div>
 
         {loading ? (
