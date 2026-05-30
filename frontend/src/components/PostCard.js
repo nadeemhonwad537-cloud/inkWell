@@ -51,7 +51,7 @@ export default function PostCard({ post, onLikeChange }) {
         {/* Meta row: category + date + draft badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '1rem', fontSize: '.7rem', color: 'var(--muted)', fontWeight: 500 }}>
           <span className="post-cat-tag">{post.category || 'Essay'}</span>
-          <span>{post.created_at ? new Date(post.created_at + 'Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) + ' · ' + new Date(post.created_at + 'Z').toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata', hour12: true }) : 'Just now'}</span>
+          <span>{post.created_at ? new Date(post.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) + ' · ' + new Date(post.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata', hour12: true }) : 'Just now'}</span>
           {post.status === 'draft' && <span className="badge badge-draft">Draft</span>}
         </div>
 
