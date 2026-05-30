@@ -22,7 +22,7 @@ router.post('/signup', async (req, res) => {
     const hashed = bcrypt.hashSync(password, 12);
     // role is hardcoded to 'reader' — can never be changed via this route
     const [result] = await pool.query(
-      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+      'INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, NOW())',
       [name, email, hashed, 'reader']
     );
 

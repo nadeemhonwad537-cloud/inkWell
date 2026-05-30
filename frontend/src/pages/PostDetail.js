@@ -87,7 +87,7 @@ export default function PostDetail() {
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '1rem', fontSize: '.7rem', color: 'var(--muted)', fontWeight: 500 }}>
           <span className="post-cat-tag">{post.category}</span>
-          <span>{new Date(post.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })} · {new Date(post.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+          <span>{new Date(post.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })} · {new Date(post.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata', hour12: true })}</span>
           {post.status === 'draft' && <span className="badge badge-draft">Draft</span>}
         </div>
 

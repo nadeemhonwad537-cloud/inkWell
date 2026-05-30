@@ -125,7 +125,7 @@ router.post('/', auth, async (req, res) => {
   try {
     const st = ['draft', 'published'].includes(status) ? status : 'draft';
     const [result] = await pool.query(
-      'INSERT INTO posts (title, excerpt, body, category, status, cover_image, author_id) VALUES (?,?,?,?,?,?,?)',
+      'INSERT INTO posts (title, excerpt, body, category, status, cover_image, author_id, created_at, updated_at) VALUES (?,?,?,?,?,?,?,NOW(),NOW())',
       [title, excerpt || '', body, category || 'Essay', st, cover_image || null, req.user.id]
     );
     const [rows] = await pool.query('SELECT * FROM posts WHERE id = ?', [result.insertId]);
