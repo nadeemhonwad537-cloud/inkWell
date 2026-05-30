@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const https = require('https');
 
 async function sendOTP(to, code) {
   const html = `
@@ -12,37 +13,60 @@ async function sendOTP(to, code) {
     </div>
   `;
 
-  // Use Brevo SMTP in production, Gmail SMTP on localhost
   const isProduction = process.env.NODE_ENV === 'production';
 
-  const transporter = nodemailer.createTransport(
-    isProduction
-      ? {
-          host: 'smtp-relay.brevo.com',
-          port: 587,
-          secure: false,
-          auth: {
-            user: process.env.BREVO_LOGIN,
-            pass: process.env.BREVO_PASSWORD,
-          },
-        }
-      : {
-          host: 'smtp.gmail.com',
-          port: 587,
-          secure: false,
-          auth: {
-            user: process.env.MAIL_USER,
-            pass: process.env.MAIL_PASS,
-          },
-        }
-  );
+  if (isProduction && process.env.BREVO_API_KEY) {
+    // Use Brevo HTTP API — works on Render free tier
+    const body = JSON.stringify({
+      sender: { name: 'Inkwell Journal', email: 'nadeemhonwad537@gmail.com' },
+      to: [{ email: to }],
+      subject: 'Your Inkwell verification code',
+      htmlContent: html,
+    });
 
-  await transporter.sendMail({
-    from: '"Inkwell Journal" <nadeemhonwad537@gmail.com>',
-    to,
-    subject: 'Your Inkwell verification code',
-    html,
-  });
+    await new Promise((resolve, reject) => {
+      const req = https.request({
+        hostname: 'api.brevo.com',
+        path: '/v3/smtp/email',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': process.env.BREVO_API_KEY,
+          'Content-Length': Buffer.byteLength(body),
+        },
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(data);
+          } else {
+            reject(new Error(`Brevo API error ${res.statusCode}: ${data}`));
+          }
+        });
+      });
+      req.on('error', reject);
+      req.write(body);
+      req.end();
+    });
+  } else {
+    // Use Gmail SMTP on localhost
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+    });
+    await transporter.sendMail({
+      from: `"Inkwell Journal" <${process.env.MAIL_USER}>`,
+      to,
+      subject: 'Your Inkwell verification code',
+      html,
+    });
+  }
 }
 
 module.exports = { sendOTP };
