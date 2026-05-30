@@ -162,7 +162,52 @@ router.put('/me/password', auth, async (req, res) => {
   }
 });
 
-// POST /api/auth/otp/send — send OTP to email (forgot password flow)
+// POST /api/auth/otp/send-verify — send OTP to verify email before signup
+router.post('/otp/send-verify', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+
+  try {
+    // Check if email already registered
+    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing.length) return res.status(409).json({ error: 'Email already registered' });
+
+    const code = generateOTP();
+    const expires = new Date(Date.now() + 10 * 60 * 1000);
+    const expiresUTC = expires.toISOString().slice(0, 19).replace('T', ' ');
+
+    await pool.query("UPDATE otps SET used = 1 WHERE email = ? AND purpose = 'verify_email'", [email]);
+    await pool.query(
+      "INSERT INTO otps (email, code, purpose, expires_at) VALUES (?, ?, 'verify_email', ?)",
+      [email, code, expiresUTC]
+    );
+
+    await sendOTP(email, code);
+    res.json({ message: 'Verification code sent to your email' });
+  } catch (err) {
+    console.error('Verify OTP send error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/otp/check-verify — verify email OTP before signup
+router.post('/otp/check-verify', async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) return res.status(400).json({ error: 'Email and code are required' });
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT * FROM otps WHERE email = ? AND code = ? AND purpose = 'verify_email' AND used = 0 AND expires_at > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 1",
+      [email, code]
+    );
+    if (!rows.length) return res.status(400).json({ error: 'Invalid or expired code' });
+
+    await pool.query('UPDATE otps SET used = 1 WHERE id = ?', [rows[0].id]);
+    res.json({ verified: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 router.post('/otp/send', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required' });

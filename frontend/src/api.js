@@ -23,6 +23,8 @@ export const authAPI = {
   changePassword: (data) => api.put('/auth/me/password', data),
   sendOTP: (email) => api.post('/auth/otp/send', { email }),
   verifyOTP: (data) => api.post('/auth/otp/verify', data),
+  sendVerifyEmail: (email) => api.post('/auth/otp/send-verify', { email }),
+  checkVerifyEmail: (data) => api.post('/auth/otp/check-verify', data),
   getPublicProfile: (id) => api.get(`/auth/users/${id}`),
 };
 
